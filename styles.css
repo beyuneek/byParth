@@ -1,0 +1,1159 @@
+/* =========================================================================
+   byparth.in — styles.css
+   A film in eight acts. Hard light, deep shadow, true black.
+   Every act is a tall scroll track with a pinned stage; --p (0→1) is written
+   by main.js each frame and drives the transforms below.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   PALETTE — true black, lit two ways.
+
+   The whole film is graded black. Two accents, and each one MEANS something:
+     GOLD  = the human side — act numbers, emphasis, the call to action,
+             the warm rim light on the portrait.
+     CYAN  = the machine side — the neural net, the assistant, citations,
+             code, live indicators.
+   Nothing is coloured for decoration; if it glows gold a person did it,
+   if it glows cyan a machine did.
+
+   Colours are also published as RGB triplets so every rgba() below composes
+   from the same source — change a hue once, the whole film regrades.
+   ------------------------------------------------------------------------- */
+:root {
+  /* GROUND — true black, lifted in neutral steps. No blue in the grade. */
+  --void:   #000000;   /* deepest black — title card ground */
+  --ground: #000000;   /* page black — the same black as the title card */
+  --raise:  #0C0C0E;   /* raised surfaces, inputs */
+  --card:   #101012;   /* cards, the assistant */
+  --line:   #26272B;   /* borders, hairlines */
+
+  --ink:    #F4F5F7;
+  --body:   #B4B8C0;
+  --dim:    #888D96;
+
+  /* Two accents, and each one MEANS something.
+     GOLD = the human side. CYAN = the machine side. Nothing else. */
+  --gold:   #F0B429;
+  --cyan:   #35D0E8;
+  --blue:   #199DB0;   /* the deeper teal — the second machine tone */
+
+  --gold-text: #FFC94D;
+  --cyan-text: #62E2F2;
+  --blue-text: #57C6D6;
+  --on-accent: #08080A;  /* black ink that sits on a gold or cyan fill */
+
+  --void-rgb: 0, 0, 0;
+  --gold-rgb: 240, 180, 41;
+  --cyan-rgb: 53, 208, 232;
+  --blue-rgb: 25, 157, 176;
+
+  /* legacy aliases so component styles keep resolving */
+  --black:  var(--void);
+  --teal:   var(--cyan);
+  --teal-text: var(--cyan-text);
+  --amber:  var(--gold);
+
+  --font-head: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+
+  --radius: 5px;
+  --maxw: 1180px;
+  --gutter: clamp(20px, 5vw, 56px);
+  --glow: 0 0 0 1px rgba(var(--cyan-rgb),0.20), 0 0 42px rgba(var(--cyan-rgb),0.12);
+  --glow-gold: 0 0 0 1px rgba(var(--gold-rgb),0.22), 0 0 42px rgba(var(--gold-rgb),0.14);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  /* JS never animates scroll here — native scroll only, so this stays smooth. */
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 0;
+  background: var(--black);
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--body);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+img { max-width: 100%; display: block; }
+a { color: var(--blue-text); text-decoration: none; transition: color 0.2s ease; }
+a:hover { color: var(--teal-text); }
+
+h1, h2, h3 {
+  font-family: var(--font-head);
+  color: var(--ink);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.0;
+  margin: 0;
+}
+
+.wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: var(--gutter); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; border-radius: 2px; }
+
+.skip-link {
+  position: absolute; left: 12px; top: -60px; z-index: 300;
+  background: var(--blue); color: var(--on-accent); font-weight: 700;
+  padding: 0.6em 1em; border-radius: var(--radius); transition: top 0.2s ease;
+}
+.skip-link:focus { top: 12px; color: var(--on-accent); }
+
+/* ---------- kicker / shared type ---------- */
+/* Act numbers are the narrator's voice — gold, the human channel. */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-text);
+  margin: 0;
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5em;
+  font-family: var(--font-body); font-weight: 700; font-size: 0.95rem; line-height: 1;
+  padding: 0.8em 1.35em; border-radius: var(--radius);
+  border: 1px solid transparent; cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+/* The call to action is a human act — gold on black. */
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold), #FFD470);
+  color: var(--on-accent);
+  box-shadow: 0 0 26px rgba(var(--gold-rgb),0.26);
+}
+.btn-primary:hover { color: var(--on-accent); transform: translateY(-2px); filter: brightness(1.06); box-shadow: 0 0 42px rgba(var(--gold-rgb),0.45); }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn-ghost:hover { border-color: var(--blue); color: var(--blue-text); }
+
+/* =========================================================================
+   FILM LAYERS — grain, vignette, cursor, progress
+   ========================================================================= */
+.grain {
+  position: fixed; inset: -50%;
+  z-index: 200; pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  animation: grain-shift 0.7s steps(4) infinite;
+}
+@keyframes grain-shift {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-3%, 2%); }
+  50%  { transform: translate(2%, -3%); }
+  75%  { transform: translate(-2%, -2%); }
+  100% { transform: translate(3%, 1%); }
+}
+.vignette {
+  position: fixed; inset: 0; z-index: 199; pointer-events: none;
+  background: radial-gradient(130% 100% at 50% 45%, transparent 45%, rgba(var(--void-rgb),0.55) 100%);
+}
+.cursor {
+  position: fixed; top: 0; left: 0; z-index: 250; pointer-events: none;
+  width: 0; height: 0; display: none;
+}
+.has-cursor .cursor { display: block; }
+.cursor span {
+  position: absolute; left: -18px; top: -18px;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid rgba(var(--cyan-rgb),0.5);
+  background: radial-gradient(circle, rgba(var(--cyan-rgb),0.16), transparent 70%);
+  transition: width 0.22s ease, height 0.22s ease, left 0.22s ease, top 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+}
+.cursor.hot span {
+  left: -30px; top: -30px; width: 60px; height: 60px;
+  border-color: var(--teal);
+  background: radial-gradient(circle, rgba(var(--cyan-rgb),0.22), transparent 70%);
+}
+.scroll-progress {
+  position: fixed; top: 0; left: 0; height: 2px; width: 100%;
+  transform-origin: 0 50%; transform: scaleX(0); z-index: 210;
+  background: linear-gradient(90deg, var(--blue), var(--teal));
+}
+@supports (animation-timeline: scroll()) {
+  .scroll-progress { animation: grow linear; animation-timeline: scroll(root); }
+  @keyframes grow { to { transform: scaleX(1); } }
+}
+
+/* =========================================================================
+   NAV
+   ========================================================================= */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 150;
+  transition: background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+  border-bottom: 1px solid transparent;
+}
+.nav.scrolled {
+  background: rgba(var(--void-rgb), 0.72);
+  backdrop-filter: saturate(150%) blur(12px);
+  -webkit-backdrop-filter: saturate(150%) blur(12px);
+  border-bottom-color: var(--line);
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  height: 66px; max-width: var(--maxw); margin-inline: auto; padding-inline: var(--gutter);
+}
+.brand {
+  display: inline-flex; align-items: center; gap: 0.55em;
+  font-family: var(--font-head); font-weight: 800; color: var(--ink);
+  letter-spacing: -0.02em; font-size: 1rem;
+}
+.brand img { width: 30px; height: 30px; border-radius: 50%; }
+.brand:hover { color: var(--ink); }
+.nav-links { display: flex; align-items: center; gap: clamp(0.8rem, 2vw, 1.8rem); list-style: none; margin: 0; padding: 0; }
+.nav-links a { font-size: 0.88rem; font-weight: 600; color: var(--body); }
+.nav-links a:hover { color: var(--ink); }
+.nav-links a.btn-primary, .nav-links a.btn-primary:hover { color: var(--on-accent); }
+.nav-toggle { display: none; background: none; border: 1px solid var(--line); border-radius: var(--radius); padding: 0.4em 0.5em; color: var(--ink); cursor: pointer; }
+
+@media (max-width: 860px) {
+  .nav-toggle { display: inline-flex; }
+  .nav-links {
+    position: absolute; top: 66px; left: 0; right: 0;
+    flex-direction: column; align-items: flex-start; gap: 0.2rem;
+    background: rgba(var(--void-rgb),0.97); border-bottom: 1px solid var(--line);
+    padding: 0.75rem var(--gutter) 1.25rem;
+    max-height: 0; overflow: hidden; visibility: hidden;
+    transition: max-height 0.3s ease, visibility 0.3s ease;
+  }
+  .nav-links.open { max-height: 340px; visibility: visible; }
+  .nav-links a { padding: 0.55em 0; }
+}
+
+/* =========================================================================
+   ACT / PIN MECHANICS
+   ========================================================================= */
+.act { position: relative; }
+.pin {
+  position: sticky; top: 0;
+  height: 100vh;   /* fallback */
+  height: 100svh;
+  overflow: hidden;
+  display: flex; align-items: center;
+}
+/* Interactive acts can be taller than the screen — let them breathe. */
+.pin-loose {
+  position: relative;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding-block: clamp(96px, 14vh, 150px) clamp(56px, 9vh, 100px);
+  overflow: visible;
+}
+
+.act-head { max-width: 30ch; margin-bottom: clamp(30px, 5vh, 54px); }
+.stage-line {
+  font-size: clamp(2.1rem, 5.6vw, 4rem);
+  margin: 0.25em 0 0;
+}
+.stage-note { margin: 1rem 0 0; color: var(--body); max-width: 52ch; font-size: clamp(0.98rem, 1.4vw, 1.1rem); }
+
+/* =========================================================================
+   ACT 0 — THE PORTRAIT
+   Hard key light, crushed shadow, cold tone. Pushes in as you scroll.
+   ========================================================================= */
+.act-title .pin { background: var(--black); }
+.net { position: absolute; inset: 0; z-index: 1; opacity: 0.55; pointer-events: none; }
+
+.portrait {
+  position: absolute; inset: 0; z-index: 2;
+  overflow: hidden;
+}
+.portrait img {
+  position: absolute;
+  right: clamp(-90px, -4vw, 0px);
+  bottom: 0;
+  height: min(104svh, 1100px);
+  width: auto;
+  object-fit: cover;
+  /* the drama: crush to near-monochrome, hard contrast, cold */
+  filter: grayscale(1) contrast(1.5) brightness(0.62);
+  mix-blend-mode: luminosity;
+  transform-origin: 70% 100%;
+  /* slow push-in across the act */
+  transform: scale(calc(1.06 + var(--p, 0) * 0.1)) translateY(calc(var(--p, 0) * -2.5svh));
+  /* the light falls off to the left, so the type has black to sit on */
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 4%, rgba(0,0,0,0.35) 26%, #000 58%),
+    linear-gradient(0deg, transparent 1%, #000 16%);
+  mask-image:
+    linear-gradient(90deg, transparent 4%, rgba(0,0,0,0.35) 26%, #000 58%),
+    linear-gradient(0deg, transparent 1%, #000 16%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+/* True black-and-white. The light is shaped with neutral white only — no gold,
+   no teal — so the portrait reads as a lit monochrome photograph, not a tinted
+   one. Key from the upper right, soft fill through the middle. */
+.portrait-tone {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(58% 66% at 80% 30%, rgba(255,255,255,0.20), transparent 62%),
+    radial-gradient(76% 84% at 60% 62%, rgba(255,255,255,0.09), transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+/* the deep shadow the light throws */
+.portrait-shadow {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, var(--black) 12%, rgba(var(--void-rgb),0.72) 38%, transparent 66%),
+    linear-gradient(0deg, var(--black) 2%, transparent 30%);
+}
+
+.title-copy {
+  position: relative; z-index: 3;
+  width: 100%; max-width: var(--maxw);
+  margin-inline: auto; padding-inline: var(--gutter);
+  /* the copy lifts and fades as the act plays out */
+  transform: translateY(calc(var(--p, 0) * -5svh));
+  opacity: calc(1 - var(--p, 0) * 0.85);
+}
+.title-name {
+  font-size: clamp(3.2rem, 13vw, 10rem);
+  line-height: 0.86;
+  letter-spacing: -0.05em;
+  margin: 0.12em 0 0;
+  text-transform: uppercase;
+}
+/* each word wipes up from behind a mask */
+.title-name .w { display: block; overflow: hidden; }
+.title-name .w > span {
+  display: block;
+  transform: translateY(102%);
+  animation: word-up 1.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.title-name .w:nth-child(1) > span { animation-delay: 0.15s; }
+.title-name .w:nth-child(2) > span { animation-delay: 0.28s; }
+@keyframes word-up { to { transform: translateY(0); } }
+
+.act-title .kicker { animation: fade-up 0.9s 0.05s cubic-bezier(0.16,1,0.3,1) both; }
+.title-place {
+  font-family: var(--font-mono); font-size: 0.82rem; color: var(--dim);
+  letter-spacing: 0.1em; margin: 1.4rem 0 0;
+  animation: fade-up 0.9s 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+.portrait-credit {
+  position: absolute; right: var(--gutter); bottom: clamp(20px, 4vh, 40px); z-index: 3;
+  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--dim);
+  writing-mode: vertical-rl;
+  opacity: calc(1 - var(--p, 0) * 1.4);
+}
+
+.cue {
+  position: absolute; left: 50%; bottom: clamp(18px, 4vh, 38px); z-index: 3;
+  transform: translateX(-50%);
+  display: inline-flex; flex-direction: column; align-items: center; gap: 0.5em;
+  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--dim);
+  opacity: calc(1 - var(--p, 0) * 2.4);
+}
+.cue i { display: block; width: 1px; height: 34px; background: linear-gradient(180deg, var(--blue), transparent); animation: cue-run 1.9s ease-in-out infinite; }
+@keyframes cue-run { 0%,100% { transform: scaleY(0.4); opacity: 0.5; transform-origin: top; } 50% { transform: scaleY(1); opacity: 1; transform-origin: top; } }
+
+@media (max-width: 860px) {
+  .portrait img {
+    right: 50%; transform: translateX(50%) scale(calc(1.02 + var(--p,0) * 0.08));
+    height: 82svh; opacity: 0.5;
+    -webkit-mask-image: linear-gradient(0deg, transparent 2%, #000 30%);
+    mask-image: linear-gradient(0deg, transparent 2%, #000 30%);
+  }
+  .portrait-shadow { background: linear-gradient(0deg, var(--black) 12%, rgba(var(--void-rgb),0.55) 50%, rgba(var(--void-rgb),0.75) 100%); }
+  .portrait-credit { display: none; }
+}
+
+/* =========================================================================
+   ACT 1 — THE PROBLEM. Sheets drift; lines land one at a time.
+   ========================================================================= */
+.act-problem .pin { background: linear-gradient(180deg, var(--black), var(--ground)); }
+.paper { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.sheet {
+  position: absolute;
+  width: clamp(52px, 7vw, 96px);
+  aspect-ratio: 3 / 4;
+  border: 1px solid rgba(var(--blue-rgb),0.18);
+  background: linear-gradient(160deg, rgba(var(--blue-rgb),0.07), transparent);
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  /* the pile scatters and drifts up as the act plays */
+  transform:
+    translateY(calc(var(--p, 0) * -34svh))
+    translateX(calc(var(--drift) * var(--p, 0) * 1.6vw))
+    rotate(calc(var(--drift) * 4deg * (0.3 + var(--p, 0))));
+  opacity: calc(0.5 - var(--p, 0) * 0.42);
+}
+.act-problem .wrap { position: relative; z-index: 2; }
+.big-lines {
+  font-size: clamp(2.1rem, 7.4vw, 5.4rem);
+  line-height: 1.02;
+  margin: 0.3em 0 0;
+}
+.big-lines .pl { display: block; overflow: hidden; }
+.big-lines .pl > span {
+  display: block;
+  /* each line clears its mask at a different point in the act */
+  transform: translateY(calc(100% * (1 - clamp(0, var(--p, 0) * 3.4 - var(--i) * 0.62, 1))));
+}
+/* The turn in the argument lands gold. */
+.big-lines .pl:nth-child(3) > span { color: var(--gold-text); }
+.close-line {
+  margin: clamp(24px, 4vh, 44px) 0 0;
+  max-width: 46ch;
+  color: var(--body);
+  font-size: clamp(0.98rem, 1.5vw, 1.12rem);
+  opacity: clamp(0, calc(var(--p, 0) * 3.2 - 1.9), 1);
+  transform: translateY(calc((1 - clamp(0, (var(--p, 0) * 3.2 - 1.9), 1)) * 22px));
+}
+
+/* =========================================================================
+   ACT 2 — THE ANSWER. Copy on the left, the assistant on the right.
+   ========================================================================= */
+.act-answer .pin { background: var(--ground); }
+.stage-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(28px, 5vw, 70px);
+  align-items: center;
+}
+.stage-copy {
+  transform: translateY(calc((1 - clamp(0, calc(var(--p,0) * 3), 1)) * 40px));
+  opacity: clamp(0, calc(var(--p, 0) * 3), 1);
+}
+.stage-art {
+  /* the assistant slides in from the right and settles */
+  transform: translate3d(calc((1 - clamp(0, calc(var(--p,0) * 2.6 - 0.15), 1)) * 8vw), 0, 0);
+  opacity: clamp(0, calc(var(--p, 0) * 2.6 - 0.15), 1);
+}
+@media (max-width: 860px) {
+  .stage-split { grid-template-columns: 1fr; gap: 28px; }
+  .stage-art { transform: none; opacity: 1; }
+  .act-answer .pin { height: auto; min-height: 100svh; position: relative; padding-block: 110px 60px; }
+}
+
+/* ---------- the assistant ---------- */
+.chat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6), var(--glow);
+  overflow: hidden;
+  max-width: 560px;
+}
+.chat-head {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(var(--cyan-rgb),0.08), transparent);
+}
+.chat-ava { width: 30px; height: 30px; border-radius: 50%; flex: none; }
+.chat-id { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.chat-title { font-family: var(--font-head); font-weight: 700; color: var(--ink); font-size: 0.88rem; }
+.chat-sub { font-family: var(--font-mono); font-size: 0.62rem; color: var(--teal-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-live {
+  margin-left: auto; flex: none;
+  font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--teal-text); display: inline-flex; align-items: center; gap: 0.4em;
+}
+.chat-live::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--teal); box-shadow: 0 0 8px var(--teal);
+  animation: live 1.6s ease-in-out infinite;
+}
+@keyframes live { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.chat-body {
+  padding: 0.9rem; height: 300px;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 0.5rem;
+  overflow: hidden;
+}
+.bubble {
+  max-width: 88%; padding: 0.6em 0.8em; border-radius: 12px;
+  font-size: 0.85rem; line-height: 1.5;
+  animation: bub 0.3s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes bub { from { opacity: 0; transform: translateY(10px); } }
+.bubble.user {
+  align-self: flex-end; border-bottom-right-radius: 4px; color: var(--ink);
+  background: linear-gradient(135deg, rgba(var(--cyan-rgb),0.24), rgba(var(--cyan-rgb),0.16));
+  border: 1px solid rgba(var(--cyan-rgb),0.36);
+}
+.bubble.bot {
+  align-self: flex-start; border-bottom-left-radius: 4px; color: var(--body);
+  background: rgba(255,255,255,0.04); border: 1px solid var(--line);
+}
+.bubble.bot b { color: var(--ink); }
+.cite-src {
+  display: block; margin-top: 0.45em; padding-top: 0.4em;
+  font-family: var(--font-mono); font-size: 0.66rem; color: var(--teal-text);
+  border-top: 1px dashed var(--line);
+}
+.bubble.typing { display: inline-flex; gap: 4px; align-items: center; }
+.bubble.typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--teal-text); animation: dot 1s infinite ease-in-out; }
+.bubble.typing span:nth-child(2) { animation-delay: 0.15s; }
+.bubble.typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dot { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+/* =========================================================================
+   ACT 6 — WHAT I BUILD. Rows sweep in on a stagger.
+   ========================================================================= */
+.act-build .pin { background: linear-gradient(180deg, var(--ground), var(--black)); }
+.build-list { list-style: none; margin: clamp(24px, 4vh, 44px) 0 0; padding: 0; }
+.build-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "n t" ". s";
+  gap: 0.2rem clamp(14px, 3vw, 32px);
+  padding: clamp(14px, 2.6vh, 28px) 0;
+  border-top: 1px solid var(--line);
+  /* each row clears in turn as the act plays */
+  opacity: clamp(0, calc(var(--p, 0) * 4.2 - var(--i) * 0.62), 1);
+  transform: translateY(calc((1 - clamp(0, calc(var(--p,0) * 4.2 - var(--i) * 0.62), 1)) * 30px));
+  transition: color 0.25s ease;
+}
+.build-row:last-child { border-bottom: 1px solid var(--line); }
+.build-n { grid-area: n; font-family: var(--font-mono); font-size: 0.8rem; color: var(--gold-text); }
+.build-title {
+  grid-area: t;
+  font-family: var(--font-head); font-weight: 800; color: var(--ink);
+  letter-spacing: -0.025em; font-size: clamp(1.5rem, 4vw, 2.7rem); line-height: 1.05;
+  transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), color 0.25s ease;
+}
+.build-note { grid-area: s; color: var(--dim); font-size: 0.92rem; max-width: 54ch; }
+.build-row:hover .build-title { color: var(--teal-text); transform: translateX(10px); }
+
+/* =========================================================================
+   ACT 7 — THE INVITATION
+   ========================================================================= */
+.act-end .pin { background: var(--black); }
+.end-wrap { max-width: 820px; }
+.end-line { font-size: clamp(2.4rem, 8vw, 5rem); margin: 0.2em 0 0; }
+.end-mail {
+  display: inline-block; margin-top: clamp(22px, 4vh, 40px);
+  font-family: var(--font-head); font-weight: 800; letter-spacing: -0.025em;
+  font-size: clamp(1.5rem, 4.4vw, 2.6rem);
+  color: var(--ink); border-bottom: 2px solid rgba(var(--gold-rgb),0.5);
+}
+.end-mail:hover { color: var(--gold-text); border-bottom-color: var(--gold); }
+.end-links { display: flex; flex-wrap: wrap; gap: 1rem 1.6rem; margin: 1rem 0 1.9rem; font-family: var(--font-mono); font-size: 0.82rem; }
+.end-links a { color: var(--dim); }
+.end-links a:hover { color: var(--teal-text); }
+.end-form { display: grid; gap: 0.65rem; max-width: 540px; }
+.ef-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+.end-form input, .end-form select, .end-form textarea {
+  font-family: var(--font-body); font-size: 0.94rem;
+  padding: 0.72em 0.85em; width: 100%;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--raise); color: var(--ink);
+}
+.end-form textarea { resize: vertical; }
+.end-form input::placeholder, .end-form textarea::placeholder { color: var(--dim); }
+.end-form input:focus, .end-form select:focus, .end-form textarea:focus {
+  border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(var(--cyan-rgb),0.2);
+}
+.end-form .btn { justify-self: start; }
+.end-based { margin-top: 1.3rem; font-family: var(--font-mono); font-size: 0.76rem; color: var(--dim); }
+@media (max-width: 520px) { .ef-row { grid-template-columns: 1fr; } }
+
+/* =========================================================================
+   ASK BOX (sandbox 1)
+   ========================================================================= */
+.ask {
+  max-width: 760px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.5), var(--glow);
+  padding: clamp(20px, 3.4vw, 32px);
+}
+.ask-form { display: flex; gap: 0.6rem; }
+.ask-form input {
+  flex: 1; min-width: 0; font-family: var(--font-body); font-size: 1rem;
+  padding: 0.78em 1em; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--raise); color: var(--ink);
+}
+.ask-form input::placeholder { color: var(--dim); }
+.ask-form input:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(var(--cyan-rgb),0.2); }
+.ask-suggestions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+.chip {
+  font-family: var(--font-body); font-size: 0.82rem; font-weight: 600;
+  color: var(--body); background: var(--raise); border: 1px solid var(--line);
+  border-radius: 999px; padding: 0.45em 0.9em; cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+.chip:hover { background: var(--blue); color: var(--on-accent); border-color: var(--blue); transform: translateY(-2px); box-shadow: 0 0 18px rgba(var(--cyan-rgb),0.35); }
+.ask-suggestions.nudge .chip { animation: chip-pulse 1.1s ease 2; }
+@keyframes chip-pulse { 50% { box-shadow: 0 0 0 4px rgba(var(--gold-rgb),0.4); border-color: var(--amber); } }
+.ask-answer { margin-top: 1.25rem; font-size: 1.02rem; color: var(--ink); line-height: 1.7; min-height: 1.5em; }
+.ask-answer:empty { margin-top: 0; min-height: 0; }
+.ask-answer .hl { background: rgba(var(--cyan-rgb),0.2); border-radius: 3px; padding: 0 0.1em; }
+.ask-answer .cite { font-family: var(--font-mono); font-size: 0.66em; color: var(--blue-text); vertical-align: super; }
+.ask-answer .caret { display: inline-block; width: 2px; height: 1.05em; background: var(--teal); vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.ask-sources { margin-top: 1rem; display: grid; gap: 0.4rem; }
+.ask-source { font-family: var(--font-mono); font-size: 0.76rem; color: var(--body); display: flex; gap: 0.6rem; align-items: baseline; }
+.ask-source .src-n { color: var(--blue-text); }
+.ask-source .src-score { color: var(--teal-text); margin-left: auto; }
+@media (max-width: 520px) {
+  .ask-form { flex-direction: column; }
+  .ask-form .btn { width: 100%; justify-content: center; }
+}
+
+/* =========================================================================
+   DOCUMENT X-RAY (sandbox 2)
+   ========================================================================= */
+.xray-badge {
+  display: inline-flex; align-items: center; gap: 0.55em;
+  font-family: var(--font-mono); font-size: 0.82rem; font-weight: 500; color: var(--ink);
+  background: rgba(var(--cyan-rgb),0.08); border: 1px solid rgba(var(--cyan-rgb),0.5);
+  border-radius: var(--radius); padding: 0.7em 1em; margin-bottom: 1.4rem;
+}
+.xray-lock { color: var(--teal-text); font-size: 0.7em; }
+.xray-controls { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(16px, 3vw, 32px); margin-bottom: 1.2rem; }
+.xray-slider label { display: block; font-family: var(--font-mono); font-size: 0.78rem; color: var(--body); margin-bottom: 0.5rem; }
+.xray-slider label b { color: var(--blue-text); }
+.xray-slider input[type="range"] { width: 100%; accent-color: var(--blue); }
+.xray-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin-bottom: 1.2rem; }
+.xs { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.8rem 1rem; text-align: center; }
+.xs-val { display: block; font-family: var(--font-head); font-weight: 800; font-size: 1.45rem; color: var(--ink); line-height: 1; }
+.xs-key { display: block; font-family: var(--font-mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dim); margin-top: 0.35rem; }
+.xray-drop {
+  border: 1px dashed var(--line); border-radius: var(--radius);
+  padding: clamp(16px, 3vw, 26px); text-align: center; background: var(--card);
+  cursor: pointer; transition: border-color 0.2s ease, background 0.2s ease; margin-bottom: 1.4rem;
+}
+.xray-drop:hover, .xray-drop.over { border-color: var(--blue); background: var(--raise); }
+.xray-drop-title { margin: 0 0 0.25rem; color: var(--ink); font-weight: 600; }
+.xray-drop-note { margin: 0 0 0.75rem; font-family: var(--font-mono); font-size: 0.76rem; color: var(--dim); }
+.xray-drop-actions { display: flex; justify-content: center; }
+.xray-panes { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(14px, 2.5vw, 22px); }
+.xray-pane { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); overflow: hidden; display: flex; flex-direction: column; }
+.xray-pane-head {
+  font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--dim); padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--line); background: var(--raise);
+}
+.xray-raw {
+  font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.7;
+  white-space: pre-wrap; word-break: break-word; padding: 0.9rem;
+  max-height: 420px; overflow-y: auto; color: var(--ink);
+}
+.band { border-radius: 3px; padding: 0.05em 0.15em; }
+.bandA { background: rgba(var(--cyan-rgb),0.16); box-shadow: inset 0 0 0 1px rgba(var(--cyan-rgb),0.22); }
+.bandB { background: rgba(var(--cyan-rgb),0.16); box-shadow: inset 0 0 0 1px rgba(var(--cyan-rgb),0.26); }
+.band .ov { background: rgba(var(--gold-rgb),0.34); border-radius: 2px; }
+.xray-chunks { padding: 0.9rem; display: grid; gap: 0.65rem; max-height: 420px; overflow-y: auto; }
+.chunk-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 0.7rem 0.8rem; background: var(--raise); }
+.chunk-top { display: flex; justify-content: space-between; align-items: baseline; }
+.chunk-n { font-family: var(--font-mono); font-size: 0.7rem; color: var(--blue-text); }
+.chunk-tok { font-family: var(--font-mono); font-size: 0.68rem; color: var(--teal-text); }
+.chunk-head { font-family: var(--font-head); font-weight: 700; font-size: 0.82rem; color: var(--ink); margin: 0.3rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chunk-preview { margin: 0; font-size: 0.78rem; color: var(--body); line-height: 1.5; }
+.chunk-flag {
+  display: inline-block; margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.64rem;
+  color: var(--amber); border: 1px solid rgba(var(--gold-rgb),0.4); background: rgba(var(--gold-rgb),0.1);
+  border-radius: 3px; padding: 0.1em 0.4em;
+}
+@media (max-width: 720px) {
+  .xray-controls { grid-template-columns: 1fr; }
+  .xray-stats { grid-template-columns: repeat(2, 1fr); }
+  .xray-panes { grid-template-columns: 1fr; }
+}
+
+/* =========================================================================
+   SPOT THE FLAW (sandbox 3)
+   ========================================================================= */
+
+/* =========================================================================
+   FOOTER
+   ========================================================================= */
+.footer { background: var(--black); color: var(--dim); padding-block: clamp(40px, 6vw, 64px); border-top: 1px solid var(--line); }
+.footer-inner { max-width: var(--maxw); margin-inline: auto; padding-inline: var(--gutter); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.5rem; }
+.footer-logo { height: 46px; width: auto; background: #fff; padding: 8px 12px; border-radius: var(--radius); }
+.footer-meta { text-align: right; font-size: 0.86rem; }
+.footer-meta p { margin: 0.15rem 0; }
+.handbuilt { font-family: var(--font-mono); color: var(--teal-text); font-size: 0.78rem; }
+@media (max-width: 620px) {
+  .footer-inner { flex-direction: column; align-items: flex-start; }
+  .footer-meta { text-align: left; }
+}
+
+
+/* =========================================================================
+   ACT 3 — THE PIPELINE
+   A pinned stage. One diagram in the middle rebuilds itself as you scroll;
+   a chapter card beside it swaps. Five chapters, ~20vh of scroll each.
+   The act carries data-chapter="1..5"; every layer below reads that.
+   ========================================================================= */
+.act-pipeline .pin { align-items: center; }
+
+.pipe-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 3vh, 34px);
+  width: 100%;
+}
+
+.pipe-head { max-width: 40ch; }
+.pipe-head .stage-note { max-width: 46ch; }
+
+.pipe-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: center;
+}
+
+/* ---------- the diagram ---------- */
+.pipe-art {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(var(--cyan-rgb), 0.07), transparent 62%),
+    var(--void);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 30px 80px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+/* Faint grid so the stage reads as a workspace, not an empty box. */
+.pipe-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(var(--cyan-rgb), 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--cyan-rgb), 0.055) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(85% 75% at 50% 45%, #000 40%, transparent 100%);
+  pointer-events: none;
+}
+
+.pa { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; }
+
+/* Each stage layer is off by default; data-chapter switches one on. */
+.pa-stage {
+  opacity: 0;
+  transform: translateY(10px) scale(0.985);
+  transform-origin: 50% 50%;
+  transform-box: fill-box;
+  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.act-pipeline[data-chapter="1"] .pa-1,
+.act-pipeline[data-chapter="2"] .pa-2,
+.act-pipeline[data-chapter="3"] .pa-3,
+.act-pipeline[data-chapter="4"] .pa-3,   /* the space stays while the question searches it */
+.act-pipeline[data-chapter="4"] .pa-4,
+.act-pipeline[data-chapter="5"] .pa-5 {
+  opacity: 1;
+  transform: none;
+}
+/* Chapter 4 keeps the point-cloud but dims it, so the winners pop. */
+.act-pipeline[data-chapter="4"] .pa-3 { opacity: 0.4; }
+
+/* -- 01 files -- */
+.pa-file rect {
+  fill: rgba(var(--cyan-rgb), 0.07);
+  stroke: var(--cyan);
+  stroke-width: 1.2;
+}
+.pa-file line { stroke: rgba(var(--cyan-rgb), 0.55); stroke-width: 1.6; stroke-linecap: round; }
+.act-pipeline[data-chapter="1"] .pa-file {
+  animation: pa-drop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i) * 0.075s);
+}
+@keyframes pa-drop {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* -- 02 slices -- */
+.pa-doc { fill: rgba(255, 255, 255, 0.02); stroke: var(--line); stroke-width: 1.2; }
+.pa-slice rect { stroke-width: 1.1; }
+.pa-slice:nth-child(odd)  rect { fill: rgba(var(--cyan-rgb), 0.16); stroke: var(--cyan); }
+.pa-slice:nth-child(even) rect { fill: rgba(var(--blue-rgb), 0.16); stroke: var(--blue); }
+.act-pipeline[data-chapter="2"] .pa-slice {
+  animation: pa-cut 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i) * 0.08s);
+}
+@keyframes pa-cut {
+  from { opacity: 0; transform: translateX(-22px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* -- 03 the meaning space -- */
+.pa-space { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 5; }
+.pa-dot { fill: var(--cyan); opacity: 0.85; }
+.act-pipeline[data-chapter="3"] .pa-dot {
+  animation: pa-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(var(--i) * 0.035s);
+}
+@keyframes pa-pop {
+  from { opacity: 0; transform: scale(0.2); }
+  to   { opacity: 0.85; transform: none; }
+}
+
+/* -- 04 the question reaches in -- */
+.pa-beam {
+  stroke: var(--gold);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 4;
+  opacity: 0.8;
+}
+.act-pipeline[data-chapter="4"] .pa-beam {
+  animation: pa-beam 0.6s ease both, pa-crawl 1.1s linear infinite;
+  animation-delay: calc(var(--i) * 0.11s), 0s;
+}
+@keyframes pa-beam { from { opacity: 0; stroke-dashoffset: 40; } to { opacity: 0.8; stroke-dashoffset: 0; } }
+@keyframes pa-crawl { to { stroke-dashoffset: -16; } }
+
+.pa-win { fill: rgba(var(--gold-rgb), 0.14); stroke: var(--gold); stroke-width: 1.6; }
+.act-pipeline[data-chapter="4"] .pa-win {
+  animation: pa-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(0.25s + var(--i) * 0.11s);
+}
+.pa-q rect { fill: rgba(var(--gold-rgb), 0.16); stroke: var(--gold); stroke-width: 1.3; }
+.pa-q text {
+  fill: var(--gold-text);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+/* -- 05 the cited answer -- */
+.pa-ans { fill: rgba(var(--cyan-rgb), 0.05); stroke: var(--cyan); stroke-width: 1.3; }
+.pa-ansline { stroke: rgba(var(--cyan-rgb), 0.6); stroke-width: 4; stroke-linecap: round; }
+.act-pipeline[data-chapter="5"] .pa-ansline {
+  animation: pa-type 0.5s ease both;
+  animation-delay: calc(0.15s + var(--i) * 0.14s);
+  transform-box: fill-box;
+  transform-origin: 0 50%;
+}
+@keyframes pa-type { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.pa-cites rect { fill: rgba(var(--gold-rgb), 0.16); stroke: var(--gold); stroke-width: 1.1; }
+.pa-cites text { fill: var(--gold-text); font-family: var(--font-mono); font-size: 8px; }
+.act-pipeline[data-chapter="5"] .pa-cites {
+  animation: pa-fade 0.5s ease 0.62s both;
+}
+@keyframes pa-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Step counter, top-right of the stage — the Snackit tell. */
+.pipe-counter {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+}
+.pipe-counter b { color: var(--gold-text); font-size: 1.05rem; font-weight: 500; }
+.pipe-counter i { font-style: normal; }
+
+/* ---------- the chapter card ---------- */
+.pipe-copy { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+
+.pchap-deck { position: relative; display: grid; }
+.pchap {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+  transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pchap.is-on { opacity: 1; transform: none; pointer-events: auto; }
+
+.pchap-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+  margin: 0 0 0.7rem;
+}
+.pchap-n { color: var(--gold-text); }
+
+.pchap-title {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: clamp(1.3rem, 2.6vw, 2rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 0.7rem;
+}
+.pchap-body {
+  color: var(--body);
+  font-size: clamp(0.95rem, 1.4vw, 1.04rem);
+  line-height: 1.62;
+  max-width: 44ch;
+  margin: 0 0 1.1rem;
+}
+.pchap-pills { display: flex; flex-wrap: wrap; gap: 0.45rem; list-style: none; margin: 0; padding: 0; }
+.pchap-pills li {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.09em;
+  color: var(--cyan-text);
+  border: 1px solid rgba(var(--cyan-rgb), 0.32);
+  background: rgba(var(--cyan-rgb), 0.07);
+  border-radius: 3px;
+  padding: 0.36em 0.62em;
+}
+
+/* ---------- the step rail ---------- */
+.prail { display: flex; gap: 0.4rem; }
+.prail-dot {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  border-top: 2px solid var(--line);
+  padding: 0.6rem 0 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--dim);
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.prail-dot.is-done { border-top-color: rgba(var(--cyan-rgb), 0.45); color: var(--body); }
+.prail-dot.is-on { border-top-color: var(--gold); color: var(--gold-text); }
+.prail-dot:hover { color: var(--ink); }
+
+.pipe-close {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
+  color: var(--dim);
+  margin: 0;
+  max-width: 60ch;
+}
+
+/* ---------- narrow ---------- */
+@media (max-width: 900px) {
+  .pipe-stage { grid-template-columns: 1fr; gap: 20px; }
+  .pipe-art { order: -1; }
+  .pchap-body { max-width: none; }
+  .pipe-close { display: none; }
+}
+@media (max-width: 560px) {
+  .pipe-head .stage-note { display: none; }
+  .prail-dot { font-size: 0.62rem; padding-top: 0.5rem; }
+  .pchap-pills li { font-size: 0.6rem; }
+}
+
+/* Short screens: the head shrinks so the diagram always fits the pin. */
+@media (max-height: 720px) and (min-width: 901px) {
+  .pipe-head .stage-note { display: none; }
+  .pipe-close { display: none; }
+}
+
+
+/* =========================================================================
+   ACT 7 — THE RECORD
+   Deliberately quiet. Three columns of plain lines: organisation in ink,
+   role and place in mono. No cards, no logos, no timeline, no bullets.
+   ========================================================================= */
+.rec-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr;
+  gap: clamp(28px, 4vw, 64px);
+  align-items: start;
+}
+
+.rec-head {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-text);
+  margin: 0 0 1.4rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.rec-list { list-style: none; margin: 0; padding: 0; }
+
+.rec-row { display: block; margin-bottom: 1.5rem; }
+.rec-row:last-child { margin-bottom: 0; }
+/* A continuation line sits tucked under the entry above it. */
+.rec-cont { margin-top: -1.1rem; padding-left: 0; }
+
+.rec-org {
+  display: block;
+  color: var(--ink);
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: clamp(0.98rem, 1.5vw, 1.08rem);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.rec-now {
+  display: inline-block;
+  margin-left: 0.55em;
+  vertical-align: 0.15em;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--on-accent);
+  background: var(--gold);
+  border-radius: 2px;
+  padding: 0.18em 0.45em;
+}
+.rec-role {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--body);
+  margin-top: 0.34rem;
+  line-height: 1.5;
+}
+.rec-place {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--dim);
+  margin-top: 0.16rem;
+}
+
+@media (max-width: 860px) {
+  .rec-grid { grid-template-columns: 1fr; gap: 34px; }
+}
+
+/* The phone number sits with the email as a second direct line. */
+.end-phone {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: clamp(0.9rem, 1.6vw, 1.05rem);
+  color: var(--cyan-text);
+  margin-top: 0.35rem;
+  letter-spacing: 0.02em;
+}
+.end-phone:hover { color: var(--gold-text); }
+
+
+/* =========================================================================
+   MOBILE CORRECTIONS
+   Two real faults, fixed at the source rather than patched per-breakpoint:
+
+   1. Grid and flex children default to min-width:auto, so a wide child
+      (the assistant card, the chunk panes, a long mono string) could force
+      its track wider than the screen. Every track child gets min-width:0.
+   2. Touch targets were 23–34px. The comfortable minimum is 44px, so
+      interactive elements get a min height on coarse pointers.
+   ========================================================================= */
+
+/* ---- 1. let every layout track actually shrink ---- */
+.stage-split > *,
+.stage-copy,
+.stage-art,
+.pipe-stage > *,
+.pipe-copy,
+.pipe-art,
+.rec-grid > *,
+.chat-head > * { min-width: 0; }
+
+.chat { max-width: min(560px, 100%); }
+.chat-title { overflow-wrap: anywhere; }
+
+/* Long unbroken strings (file paths, mono citations) must never widen a track. */
+.chat-src,
+.ask-source,
+.chunk-head,
+.rec-role,
+.rec-place { overflow-wrap: anywhere; }
+
+/* ---- 2. touch targets ---- */
+@media (pointer: coarse) {
+  .nav-links a,
+  .chip,
+  .prail-dot,
+  .btn,
+  .xray-drop,
+  .end-links a,
+  .end-mail,
+  .end-phone,
+  .brand {
+    min-height: 44px;
+  }
+  .nav-links a,
+  .chip,
+  .btn,
+  .end-mail,
+  .end-phone,
+  .brand {
+    display: inline-flex;
+    align-items: center;
+  }
+  .prail-dot { padding-top: 0.8rem; padding-bottom: 0.5rem; align-items: flex-start; }
+  .nav-toggle { min-width: 44px; min-height: 44px; justify-content: center; }
+}
+
+/* ---- 3. the small-phone pass (375px) ---- */
+@media (max-width: 420px) {
+  /* The assistant is the most important thing on the page — give it room. */
+  .chat-body { height: 260px; }
+  .chat-sub { display: none; }          /* the strapline crowds the head row */
+  .bubble { max-width: 92%; font-size: 0.82rem; }
+
+  /* Nav: the brand name alone, no wordmark crowding the toggle. */
+  .brand span { font-size: 0.98rem; }
+
+  /* The record collapses to one column already; tighten its rhythm. */
+  .rec-row { margin-bottom: 1.25rem; }
+
+  /* Contact form fields stack and stay thumb-sized. */
+  .end-form input,
+  .end-form select,
+  .end-form textarea { font-size: 16px; }  /* 16px stops iOS zooming on focus */
+}
+
+/* =========================================================================
+   REDUCED MOTION — the film becomes a contact sheet: everything visible, still.
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .grain { display: none; }
+  .pin { position: relative; height: auto; min-height: 0; padding-block: 90px 60px; }
+  .act { min-height: 0 !important; }
+  .title-name .w > span { transform: none; }
+  .portrait img { transform: none; }
+  .big-lines .pl > span,
+  .stage-copy, .stage-art, .build-row, .close-line { transform: none !important; opacity: 1 !important; }
+  .cue, .portrait-credit { opacity: 1; }
+  /* Pipeline becomes a stack: every chapter visible, diagram frozen on 05. */
+  .pchap { opacity: 1 !important; transform: none !important; position: static; }
+  .pchap-deck { display: block; }
+  .pchap + .pchap { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px solid var(--line); }
+  .pa-stage { opacity: 1; transform: none; }
+  .pa-1, .pa-2, .pa-4 { display: none; }
+  .pipe-stage { grid-template-columns: 1fr; }
+  .prail { display: none; }
+}
+
+/* The contact form's safety net while the Formspree ID is still a placeholder. */
+.form-fallback {
+  margin: 0.9rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--gold);
+  border-radius: var(--radius);
+  background: var(--raise);
+  font-size: 0.88rem;
+  color: var(--body);
+}
+.form-fallback a { color: var(--gold-text); }

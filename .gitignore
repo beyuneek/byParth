@@ -1,0 +1,11 @@
+# Full-size source images — the optimised versions in assets/ are what ships.
+assets/_originals/
+
+# Loose source files that must not be published
+Professional photo parth (suit).jpg
+by-parth-logo.png
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+*.log

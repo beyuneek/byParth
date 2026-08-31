@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Parth Sharma — AI Engineer, Chatbots &amp; Document AI</title>
+  <meta name="description" content="I build chatbots that answer from your own documents — and cite the file every answer came from. Document AI, internal tools and web applications, running on infrastructure you control." />
+
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@300;400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css?v=41" />
+</head>
+<body>
+  <!-- Film grain + vignette over the whole film -->
+  <div class="grain" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="cursor" id="cursor" aria-hidden="true"><span></span></div>
+  <div class="scroll-progress" aria-hidden="true"></div>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="nav" id="nav"></header>
+
+  <main id="main">
+    <!-- Each ACT is a tall scroll track holding a pinned, full-screen stage.
+         Scroll progress (0→1) is written to --p on the act and drives the CSS. -->
+
+    <!-- ACT 0 — TITLE CARD: the portrait -->
+    <section class="act act-title" id="title" data-len="240"></section>
+
+    <!-- ACT 1 — THE PROBLEM -->
+    <section class="act act-problem" id="problem" data-len="260"></section>
+
+    <!-- ACT 2 — THE ANSWER: live assistant -->
+    <section class="act act-answer" id="answer" data-len="200"></section>
+
+    <!-- ACT 3 — THE PIPELINE: how a document chatbot actually works.
+         Long track: five chapters play out across it, Snackit-style. -->
+    <section class="act act-pipeline" id="pipeline" data-len="520"></section>
+
+    <!-- ACT 4 — THE CRAFT: document x-ray (step 02, live) -->
+    <section class="act act-craft" id="craft" data-len="120"></section>
+
+    <!-- ACT 5 — INTERROGATE ME: ask box -->
+    <section class="act act-ask" id="ask" data-len="120"></section>
+
+    <!-- ACT 6 — WHAT I BUILD -->
+    <section class="act act-build" id="build" data-len="220"></section>
+
+    <!-- ACT 7 — THE RECORD: where I've worked, education, training -->
+    <section class="act act-record" id="record" data-len="120"></section>
+
+    <!-- ACT 7 — THE INVITATION -->
+    <section class="act act-end" id="contact" data-len="140"></section>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="main.js?v=41" defer></script>
+  <script src="sandbox-ask.js?v=41" defer></script>
+  <script src="sandbox-xray.js?v=41" defer></script>
+</body>
+</html>
