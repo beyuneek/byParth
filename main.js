@@ -1,5 +1,5 @@
 /* =========================================================================
-   byparth.in — main.js
+   byparth.com — main.js
 
    A film in eight acts. Each ACT is a tall scroll track holding a pinned,
    full-screen stage. A single rAF loop writes scroll progress (0→1) into
