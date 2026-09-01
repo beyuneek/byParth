@@ -698,11 +698,14 @@ function actContact() {
         </div>
         <form class="end-form" action="${escapeAttr(c.formAction)}" method="POST">
           <div class="ef-row">
-            <input name="name" type="text" placeholder="Name" aria-label="Your name" required />
-            <input name="email" type="email" placeholder="Email" aria-label="Your email" required />
+            <input name="name" type="text" placeholder="Name" aria-label="Your name"
+                   autocomplete="name" required />
+            <input name="email" type="email" placeholder="Email" aria-label="Your email"
+                   autocomplete="email" inputmode="email" required />
           </div>
           <select name="topic" aria-label="What's this about?">${opts}</select>
-          <textarea name="message" rows="3" aria-label="Message" placeholder="${escapeAttr(c.messagePlaceholder)}" required></textarea>
+          <textarea name="message" rows="3" aria-label="Message"
+                    autocomplete="off" placeholder="${escapeAttr(c.messagePlaceholder)}" required></textarea>
           <button class="btn btn-primary" type="submit">Send it →</button>
         </form>
         <p class="end-based">${escapeHtml(c.based)}</p>
