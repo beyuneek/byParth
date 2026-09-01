@@ -905,23 +905,87 @@ function initCursor() {
 function initContactForm() {
   const form = $(".end-form");
   if (!form) return;
-  const action = form.getAttribute("action") || "";
-  if (!action.includes("YOUR_FORM_ID")) return;   // real endpoint — leave it alone
 
+  const action = form.getAttribute("action") || "";
   const notice = document.createElement("p");
   notice.className = "form-fallback";
   notice.hidden = true;
   form.appendChild(notice);
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
+  const directRoutes =
+    `Email me at <a href="mailto:${escapeAttr(CONTENT.meta.email)}">${escapeHtml(CONTENT.meta.email)}</a> ` +
+    `or call <a href="${escapeAttr(CONTENT.meta.phoneHref)}">${escapeHtml(CONTENT.meta.phone)}</a> ` +
+    `and you'll reach me directly.`;
+
+  const say = (html) => {
     notice.hidden = false;
-    notice.innerHTML =
-      `The form isn't wired up yet — I don't want to lose your message. ` +
-      `Email me at <a href="mailto:${escapeAttr(CONTENT.meta.email)}">${escapeHtml(CONTENT.meta.email)}</a> ` +
-      `or call <a href="${escapeAttr(CONTENT.meta.phoneHref)}">${escapeHtml(CONTENT.meta.phone)}</a> ` +
-      `and you'll reach me directly.`;
+    notice.innerHTML = html;
     notice.setAttribute("role", "alert");
+  };
+
+  /* No endpoint yet: don't send anyone to a broken page — hand over the
+     direct routes instead. This branch disappears once a real ID is set. */
+  if (action.includes("YOUR_FORM_ID")) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      say(`The form isn't wired up yet — I don't want to lose your message. ${directRoutes}`);
+    });
+    return;
+  }
+
+  /* Real endpoint. Post it in the background so the visitor is never thrown
+     onto the form host's own "Thanks!" page — the reply happens right here,
+     in the middle of the conversation they were already having.
+
+     The form keeps its action and method, so with JavaScript off it still
+     submits the ordinary way rather than doing nothing at all. */
+  const button = $("button[type=submit]", form);
+  const buttonText = button ? button.textContent : "";
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (form.dataset.sending === "1") return;
+    form.dataset.sending = "1";
+    notice.hidden = true;
+    if (button) { button.disabled = true; button.textContent = "Sending…"; }
+
+    try {
+      const res = await fetch(action, {
+        method: "POST",
+        body: new FormData(form),
+        headers: { Accept: "application/json" },
+      });
+
+      if (res.ok) {
+        // Replace the form outright — a sent message shouldn't leave an
+        // empty form sitting there inviting a second one.
+        const done = document.createElement("div");
+        done.className = "form-sent";
+        done.setAttribute("role", "status");
+        done.innerHTML =
+          `<p class="form-sent-head">Message sent.</p>` +
+          `<p class="form-sent-body">Thanks — I read these myself and I'll reply from ` +
+          `<a href="mailto:${escapeAttr(CONTENT.meta.email)}">${escapeHtml(CONTENT.meta.email)}</a>. ` +
+          `If it's urgent, call <a href="${escapeAttr(CONTENT.meta.phoneHref)}">${escapeHtml(CONTENT.meta.phone)}</a>.</p>`;
+        form.replaceWith(done);
+        return;
+      }
+
+      // Formspree answers a rejected submission with a reason worth showing.
+      let why = "";
+      try {
+        const data = await res.json();
+        if (data && Array.isArray(data.errors) && data.errors.length) {
+          why = data.errors.map((x) => x.message).join(". ") + ". ";
+        }
+      } catch (_) { /* body wasn't JSON — the generic message covers it */ }
+      say(`${why}That didn't go through. ${directRoutes}`);
+    } catch (_) {
+      say(`That didn't go through — the connection failed. ${directRoutes}`);
+    } finally {
+      form.dataset.sending = "0";
+      if (button) { button.disabled = false; button.textContent = buttonText; }
+    }
   });
 }
 
