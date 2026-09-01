@@ -202,7 +202,7 @@ const CONTENT = {
     kicker: "08",
     line: "Tell me the problem.",
     note: "Not the solution. I'll tell you honestly whether it's something I should build, something you should buy, or something you don't need at all.",
-    formAction: "https://formspree.io/f/YOUR_FORM_ID",
+    formAction: "https://formspree.io/f/xqpkpplz",
     selectOptions: [
       "An AI chatbot or assistant",
       "Document AI over our own files",
