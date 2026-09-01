@@ -6,13 +6,42 @@
   <title>Parth Sharma — AI Engineer, Chatbots &amp; Document AI</title>
   <meta name="description" content="I build chatbots that answer from your own documents — and cite the file every answer came from. Document AI, internal tools and web applications, running on infrastructure you control." />
 
+  <link rel="canonical" href="https://byparth.in/" />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
 
+  <!-- Link previews: what this page looks like when someone shares it. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://byparth.in/" />
+  <meta property="og:site_name" content="Parth Sharma" />
+  <meta property="og:title" content="Parth Sharma — AI Engineer, Chatbots &amp; Document AI" />
+  <meta property="og:description" content="I build chatbots that answer from your own documents — and cite the file every answer came from." />
+  <meta property="og:image" content="https://byparth.in/assets/og-cover.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Parth Sharma — AI Engineer, chatbots and RAG systems." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Parth Sharma — AI Engineer, Chatbots &amp; Document AI" />
+  <meta name="twitter:description" content="I build chatbots that answer from your own documents — and cite the file every answer came from." />
+  <meta name="twitter:image" content="https://byparth.in/assets/og-cover.jpg" />
+
+  <!-- The portrait is the largest thing on the first screen, so ask for it
+       early and let the browser pick the size that suits the viewport. -->
+  <link rel="preload" as="image" href="assets/parth-portrait-sm.jpg"
+        imagesrcset="assets/parth-portrait-sm.jpg 560w, assets/parth-portrait.jpg 880w"
+        imagesizes="(max-width: 760px) 100vw, 60vw" fetchpriority="high" />
+
+  <!-- Fonts load without holding up the first paint; the stylesheet starts as
+       print-only and is promoted once it arrives. display=swap means text is
+       readable in a fallback face until then. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@300;400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@300;400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" />
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@300;400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" />
+  </noscript>
 
-  <link rel="stylesheet" href="styles.css?v=43" />
+  <link rel="stylesheet" href="styles.css?v=44" />
 </head>
 <body>
   <!-- Film grain + vignette over the whole film -->
@@ -54,14 +83,14 @@
     <!-- ACT 7 — THE RECORD: where I've worked, education, training -->
     <section class="act act-record" id="record" data-len="120"></section>
 
-    <!-- ACT 7 — THE INVITATION -->
+    <!-- ACT 8 — THE INVITATION -->
     <section class="act act-end" id="contact" data-len="140"></section>
   </main>
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="main.js?v=43" defer></script>
-  <script src="sandbox-ask.js?v=43" defer></script>
-  <script src="sandbox-xray.js?v=43" defer></script>
+  <script src="main.js?v=44" defer></script>
+  <script src="sandbox-ask.js?v=44" defer></script>
+  <script src="sandbox-xray.js?v=44" defer></script>
 </body>
 </html>

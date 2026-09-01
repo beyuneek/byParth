@@ -336,7 +336,10 @@ function actTitle() {
     <div class="pin">
       <canvas class="net" aria-hidden="true"></canvas>
       <div class="portrait" aria-hidden="true">
-        <img src="assets/parth-portrait.jpg" alt="" width="880" height="1100" fetchpriority="high" decoding="async" />
+        <img src="assets/parth-portrait.jpg" alt="" width="880" height="1100"
+             srcset="assets/parth-portrait-sm.jpg 560w, assets/parth-portrait.jpg 880w"
+             sizes="(max-width: 760px) 100vw, 60vw"
+             fetchpriority="high" decoding="async" />
         <span class="portrait-tone"></span>
         <span class="portrait-shadow"></span>
       </div>
