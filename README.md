@@ -23,6 +23,10 @@
 
 ---
 
+<p align="center">
+  <img src="assets/pipeline.gif" alt="The five steps a document chatbot takes, as the site explains them" width="820">
+</p>
+
 ## Why this exists
 
 Most portfolios describe the work. This one lets you use it.
