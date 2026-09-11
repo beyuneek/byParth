@@ -325,19 +325,23 @@ END OF PROCEDURE — NORTHWIND FABRICATION WORKS (FICTIONAL).`;
   function bestLine(chunk, qset) {
     if (chunk.table) {
       const rows = chunk.text.split("\n").filter((l) => l.includes("|"));
-      if (rows.length > 1) {
-        const body = rows.slice(1).filter((r) => !/^[\s|:-]+$/.test(r));
-        let best = null, bestHits = 0;
-        body.forEach((row) => {
-          const hits = askTokens(row).filter((t) => qset.has(t)).length;
-          if (hits > bestHits) { best = row; bestHits = hits; }
-        });
-        return best ? rows[0] + "\n" + best : rows[0];
-      }
-      return chunk.text.trim();
+      const body = rows.slice(1).filter((r) => !/^[\s|:-]+$/.test(r));
+      let bestRow = null, bestHits = 0;
+      body.forEach((row) => {
+        const hits = askTokens(row).filter((t) => qset.has(t)).length;
+        if (hits > bestHits) { bestRow = row; bestHits = hits; }
+      });
+      // Only answer with a row that actually matches. If none does, the answer
+      // is in the prose around the table, so fall through and look there.
+      if (bestRow) return rows[0] + "\n" + bestRow;
     }
+    const prose = chunk.text
+      .split("\n")
+      .filter((line) => !line.includes("|") && !/^\s*#{1,6}\s+/.test(line))
+      .join("\n")
+      .trim();
     let best = "", bestScore = -1;
-    for (const sentence of splitSentences(chunk.text.replace(/^\s*#{1,6}\s+.*$/gm, ""))) {
+    for (const sentence of splitSentences(prose || chunk.text)) {
       const toks = askTokens(sentence);
       if (!toks.length) continue;
       const hits = toks.filter((t) => qset.has(t)).length;

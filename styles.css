@@ -646,6 +646,7 @@ h1, h2, h3 {
 .xask-form input::placeholder { color: var(--dim); }
 .xask-form input:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(var(--cyan-rgb),0.2); }
 .xask-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+.xask-chips[hidden] { display: none; }              /* those questions are about the sample */
 .xask-answer { margin-top: 1.2rem; font-size: 1rem; color: var(--ink); line-height: 1.7; }
 .xask-answer:empty { margin-top: 0; }
 .xask-answer .hl { background: rgba(var(--cyan-rgb),0.2); border-radius: 3px; padding: 0 0.1em; }
