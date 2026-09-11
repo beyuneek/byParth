@@ -228,6 +228,179 @@ END OF PROCEDURE — NORTHWIND FABRICATION WORKS (FICTIONAL).`;
     return chunks;
   }
 
+  /* =========================================================================
+     Ask the document: BM25 over the chunks above, in this browser.
+
+     This is the keyword half of retrieval. A deployed system pairs it with an
+     embedding model so that a question and a passage can match on meaning
+     alone — but the half that is here is the half that gets part numbers and
+     clause references right, and it is honest about finding nothing.
+     ========================================================================= */
+  const K1 = 1.5, B25 = 0.75;
+  const SUPPORTING = 0.35;              // keep hits scoring above 35% of the best one
+
+  const STOP = new Set(
+    ("a an the and or but of to in on for with is are was were be been being do does did " +
+     "has have had he she it they i you we at by as from that this these those what which who " +
+     "whom whose his her their its about can could would should will my me your our us him them " +
+     "into over under out up down then than so if not no yes there here how when where why " +
+     "am get got very just also more most such own same too").split(/\s+/)
+  );
+
+  const GREET = new Set(["hi", "hey", "hello", "yo", "namaste", "hola", "sup", "thanks", "test", "ok", "okay"]);
+
+  function stem(w) {
+    w = w.toLowerCase();
+    if (w.length > 4) {
+      if (w.endsWith("ies")) return w.slice(0, -3) + "y";
+      if (w.endsWith("ing")) return w.slice(0, -3);
+      if (w.endsWith("ed")) return w.slice(0, -2);
+      if (w.endsWith("es")) return w.slice(0, -2);
+      if (w.endsWith("s")) return w.slice(0, -1);
+    }
+    return w;
+  }
+
+  const askTokens = (s) =>
+    String(s).toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length >= 2 && !STOP.has(t)).map(stem);
+
+  let chunksNow = [];
+  let askIndex = null;
+
+  function buildAskIndex(chunks) {
+    // The heading is indexed with the passage, so a chunk is findable by the
+    // section it belongs to and not only by its own words.
+    const docs = chunks.map((chunk, i) => {
+      const toks = askTokens(`${chunk.heading}\n${chunk.text}`);
+      const tf = Object.create(null);
+      toks.forEach((t) => (tf[t] = (tf[t] || 0) + 1));
+      return { i, chunk, tf, len: toks.length };
+    });
+    const df = Object.create(null);
+    docs.forEach((d) => Object.keys(d.tf).forEach((t) => (df[t] = (df[t] || 0) + 1)));
+    const idf = Object.create(null);
+    Object.keys(df).forEach((t) => {
+      idf[t] = Math.log(1 + (docs.length - df[t] + 0.5) / (df[t] + 0.5));
+    });
+    const avgdl = docs.reduce((s, d) => s + d.len, 0) / (docs.length || 1);
+    return { docs, idf, avgdl };
+  }
+
+  function rank(qTokens) {
+    const { docs, idf, avgdl } = askIndex;
+    const terms = new Set(qTokens);
+    return docs
+      .map((doc) => {
+        let score = 0, matched = 0;
+        terms.forEach((t) => {
+          const f = doc.tf[t];
+          if (!f) return;
+          matched++;
+          score += (idf[t] || 0) * ((f * (K1 + 1)) / (f + K1 * (1 - B25 + (B25 * doc.len) / avgdl)));
+        });
+        return { doc, score, matched };
+      })
+      .filter((r) => r.score > 0)
+      .sort((a, b) => b.score - a.score);
+  }
+
+  // Split only where a full stop is followed by a space, so a clause number
+  // like "3.3" stays whole instead of becoming a sentence called "3".
+  function splitSentences(text) {
+    const out = [];
+    const boundary = /[.!?](?=\s)/g;
+    let start = 0, match;
+    while ((match = boundary.exec(text))) {
+      const piece = text.slice(start, match.index + 1).trim();
+      if (piece) out.push(piece);
+      start = match.index + 1;
+    }
+    const tail = text.slice(start).trim();
+    if (tail) out.push(tail);
+    return out.length ? out : [String(text).trim()];
+  }
+
+  // A table answers with its header plus the row that matches — a row without
+  // its header is meaningless. Prose answers with its densest sentence.
+  function bestLine(chunk, qset) {
+    if (chunk.table) {
+      const rows = chunk.text.split("\n").filter((l) => l.includes("|"));
+      if (rows.length > 1) {
+        const body = rows.slice(1).filter((r) => !/^[\s|:-]+$/.test(r));
+        let best = null, bestHits = 0;
+        body.forEach((row) => {
+          const hits = askTokens(row).filter((t) => qset.has(t)).length;
+          if (hits > bestHits) { best = row; bestHits = hits; }
+        });
+        return best ? rows[0] + "\n" + best : rows[0];
+      }
+      return chunk.text.trim();
+    }
+    let best = "", bestScore = -1;
+    for (const sentence of splitSentences(chunk.text.replace(/^\s*#{1,6}\s+.*$/gm, ""))) {
+      const toks = askTokens(sentence);
+      if (!toks.length) continue;
+      const hits = toks.filter((t) => qset.has(t)).length;
+      const score = hits + (hits / toks.length) * 0.5;     // dense beats merely long
+      if (score > bestScore) { best = sentence; bestScore = score; }
+    }
+    return best || splitSentences(chunk.text)[0] || chunk.text;
+  }
+
+  function highlight(text, qset) {
+    return String(text)
+      .replace(/[A-Za-z0-9']+|[^A-Za-z0-9']+/g, (part) =>
+        /^[A-Za-z0-9']/.test(part) && qset.has(stem(part))
+          ? `<span class="hl">${escapeHtml(part)}</span>`
+          : escapeHtml(part))
+      .replace(/\n/g, "<br>");
+  }
+
+  const REFUSAL =
+    '<span class="xask-refuse">Nothing in this document covers that. Saying so is the point: ' +
+    'an assistant that invents an answer here is worse than no assistant at all.</span>';
+
+  function runAsk(raw) {
+    const question = String(raw || "").trim();
+    els.askInput.value = question;
+    const say = (html) => { els.askAnswer.innerHTML = html; els.askSources.innerHTML = ""; };
+
+    if (!question) return say("");
+    if (question.length < 3 || GREET.has(question.toLowerCase())) {
+      return say('<span class="xask-refuse">Ask something specific about the document above — ' +
+                 'this search only knows what is in it.</span>');
+    }
+
+    if (!askIndex) askIndex = buildAskIndex(chunksNow);
+    const qTokens = askTokens(question);
+    if (!qTokens.length) return say(REFUSAL);
+
+    const ranked = rank(qTokens);
+    // One matching word out of five is a coincidence, not an answer.
+    const need = qTokens.length >= 4 ? 2 : 1;
+    if (!ranked.length || ranked[0].matched < need) return say(REFUSAL);
+
+    const qset = new Set(qTokens);
+    const top = ranked[0].score;
+    // A supporting passage has to cover nearly as much of the question as the
+    // best one. Quoting a passage that shares a single word makes a right
+    // answer read as a confused one.
+    const bar = Math.max(need, Math.ceil(ranked[0].matched * 0.75));
+    const hits = ranked.filter((r) => r.matched >= bar && r.score >= SUPPORTING * top).slice(0, 3);
+
+    els.askAnswer.innerHTML = hits
+      .map((h, i) => `${highlight(bestLine(h.doc.chunk, qset), qset)} <sup class="cite">[${i + 1}]</sup>`)
+      .join(" ");
+    els.askSources.innerHTML = hits
+      .map((h, i) => `
+        <button type="button" class="xask-source" data-chunk="${h.doc.i}">
+          <span class="src-n">[${i + 1}]</span>
+          <span class="src-head">${escapeHtml(h.doc.chunk.heading)}</span>
+          <span class="src-score">chunk ${h.doc.i + 1} · ${Math.round((h.score / top) * 100)}% match</span>
+        </button>`)
+      .join("");
+  }
+
   /* -------- render -------- */
   let els = null;
   let currentText = SAMPLE;
@@ -247,7 +420,7 @@ END OF PROCEDURE — NORTHWIND FABRICATION WORKS (FICTIONAL).`;
       const full = (c.overlap ? c.overlap + " " : "") + c.text;
       const preview = full.slice(0, 180);
       return `
-        <article class="chunk-card">
+        <article class="chunk-card" data-chunk="${i}">
           <div class="chunk-top">
             <span class="chunk-n">Chunk ${i + 1}</span>
             <span class="chunk-tok">${tokens(full)} tokens</span>
@@ -282,6 +455,15 @@ END OF PROCEDURE — NORTHWIND FABRICATION WORKS (FICTIONAL).`;
     chunks = mergeTiny(chunks);
     applyOverlap(chunks, +els.overlap.value);
     render(chunks, sections);
+
+    // The chunks just changed, so any answer on screen cites passages that no
+    // longer exist. Clear it, and rebuild the index on the next question.
+    chunksNow = chunks;
+    askIndex = null;
+    if (els.askAnswer) {
+      els.askAnswer.innerHTML = "";
+      els.askSources.innerHTML = "";
+    }
   }
 
   /* -------- file handling (FileReader only — nothing is uploaded) -------- */
@@ -339,6 +521,8 @@ END OF PROCEDURE — NORTHWIND FABRICATION WORKS (FICTIONAL).`;
       }
       currentText = text;
       note(`Loaded: ${file.name}${detail}`);
+      els.askChips.hidden = true;              // those questions were about the sample
+      els.askInput.value = "";
       rechunk();
     } catch (err) {
       if (job !== loadSeq) return;
@@ -660,6 +844,27 @@ END OF PROCEDURE — NORTHWIND FABRICATION WORKS (FICTIONAL).`;
           <div class="xray-pane-head">The chunks an AI would store</div>
           <div class="xray-chunks" id="xr-chunks"></div>
         </div>
+      </div>
+
+      <div class="xask">
+        <form class="xask-form" id="xr-ask-form">
+          <input id="xr-ask-input" type="search" autocomplete="off"
+                 placeholder="Now ask this document a question…"
+                 aria-label="Ask this document a question" />
+          <button type="submit" class="btn btn-solid">Ask</button>
+        </form>
+        <div class="xask-chips" id="xr-ask-chips">
+          <button type="button" class="chip" data-q="How often is a hydraulic press serviced?">How often is a hydraulic press serviced?</button>
+          <button type="button" class="chip" data-q="Who signs off a repair?">Who signs off a repair?</button>
+          <button type="button" class="chip" data-q="What happens when a task falls on a non-working day?">What happens on a non-working day?</button>
+        </div>
+        <div class="xask-answer" id="xr-ask-answer"></div>
+        <div class="xask-sources" id="xr-ask-sources"></div>
+        <p class="xask-note">
+          Keyword ranking (BM25) over the chunks above, running in this tab. A deployed
+          system pairs it with an embedding model so paraphrases match too — this half is
+          the one that gets part numbers and clause references right.
+        </p>
       </div>`;
 
     els = {
@@ -674,14 +879,42 @@ END OF PROCEDURE — NORTHWIND FABRICATION WORKS (FICTIONAL).`;
       reset: root.querySelector("#xr-reset"),
       raw: root.querySelector("#xr-raw"),
       chunks: root.querySelector("#xr-chunks"),
+      askForm: root.querySelector("#xr-ask-form"),
+      askInput: root.querySelector("#xr-ask-input"),
+      askChips: root.querySelector("#xr-ask-chips"),
+      askAnswer: root.querySelector("#xr-ask-answer"),
+      askSources: root.querySelector("#xr-ask-sources"),
     };
 
     els.size.addEventListener("input", rechunk);
     els.overlap.addEventListener("input", rechunk);
 
+    els.askForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      runAsk(els.askInput.value);
+    });
+
+    els.askChips.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (chip) runAsk(chip.dataset.q);
+    });
+
+    // A citation is only worth having if you can open what it points at.
+    els.askSources.addEventListener("click", (e) => {
+      const source = e.target.closest(".xask-source");
+      if (!source) return;
+      const card = els.chunks.querySelector(`[data-chunk="${source.dataset.chunk}"]`);
+      if (!card) return;
+      card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      card.classList.remove("flash");
+      void card.offsetWidth;                                   // restart the animation
+      card.classList.add("flash");
+    });
+
     els.reset.addEventListener("click", () => {
       currentText = SAMPLE;
       els.dropNote.textContent = "Using the fictional sample SOP. Drop your own to see it chunked.";
+      els.askChips.hidden = false;
       rechunk();
     });
 

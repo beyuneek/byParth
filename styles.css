@@ -605,8 +605,8 @@ h1, h2, h3 {
 .ask-source .src-n { color: var(--blue-text); }
 .ask-source .src-score { color: var(--teal-text); margin-left: auto; }
 @media (max-width: 520px) {
-  .ask-form { flex-direction: column; }
-  .ask-form .btn { width: 100%; justify-content: center; }
+  .ask-form, .xask-form { flex-direction: column; }
+  .ask-form .btn, .xask-form .btn { width: 100%; justify-content: center; }
 }
 
 /* =========================================================================
@@ -636,6 +636,34 @@ h1, h2, h3 {
 .xray-drop-title { margin: 0 0 0.25rem; color: var(--ink); font-weight: 600; }
 .xray-drop-note { margin: 0 0 0.75rem; font-family: var(--font-mono); font-size: 0.76rem; color: var(--dim); }
 .xray-drop-actions { display: flex; justify-content: center; }
+.xask { margin-top: clamp(18px, 3vw, 28px); border-top: 1px solid var(--line); padding-top: clamp(18px, 3vw, 26px); }
+.xask-form { display: flex; gap: 0.6rem; }
+.xask-form input {
+  flex: 1; min-width: 0; font-family: var(--font-body); font-size: 1rem;
+  padding: 0.78em 1em; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--raise); color: var(--ink);
+}
+.xask-form input::placeholder { color: var(--dim); }
+.xask-form input:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(var(--cyan-rgb),0.2); }
+.xask-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+.xask-answer { margin-top: 1.2rem; font-size: 1rem; color: var(--ink); line-height: 1.7; }
+.xask-answer:empty { margin-top: 0; }
+.xask-answer .hl { background: rgba(var(--cyan-rgb),0.2); border-radius: 3px; padding: 0 0.1em; }
+.xask-answer .cite { font-family: var(--font-mono); font-size: 0.66em; color: var(--blue-text); vertical-align: super; }
+.xask-refuse { color: var(--body); }
+.xask-sources { margin-top: 0.9rem; display: grid; gap: 0.35rem; }
+.xask-source {
+  display: flex; gap: 0.6rem; align-items: baseline; width: 100%; text-align: left;
+  font-family: var(--font-mono); font-size: 0.76rem; color: var(--body);
+  background: none; border: 1px solid transparent; border-radius: var(--radius);
+  padding: 0.5em 0.6em; cursor: pointer;
+}
+.xask-source:hover { border-color: var(--line); background: var(--raise); color: var(--ink); }
+.xask-source .src-n { color: var(--blue-text); }
+.xask-source .src-head { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xask-source .src-score { color: var(--teal-text); margin-left: auto; white-space: nowrap; }
+.xask-note { margin: 1rem 0 0; font-family: var(--font-mono); font-size: 0.72rem; color: var(--dim); line-height: 1.65; }
+.chunk-card.flash { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(var(--cyan-rgb),0.18); }
 .xray-panes { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(14px, 2.5vw, 22px); }
 .xray-pane { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); overflow: hidden; display: flex; flex-direction: column; }
 .xray-pane-head {

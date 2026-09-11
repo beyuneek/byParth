@@ -127,7 +127,7 @@ const CONTENT = {
   craft: {
     kicker: "04 — step 02, for real",
     line: "Cut it wrong, and every answer is wrong.",
-    note: "This is step 02 above, running on a real document. Drag the sliders — or drop in a file of your own. It never leaves your browser.",
+    note: "This is step 02 above, running on a real document. Drop in a PDF or a Word file of your own, watch it get cut into passages — then ask it a question and see which passage the answer came from. It never leaves your browser.",
   },
 
   /* ---- ACT 5 — interrogate me ---- */
@@ -243,7 +243,7 @@ const CONTENT = {
     { title: "How a document chatbot works", href: "#pipeline",
       text: "A document chatbot works in five steps: your files are collected, cut into passages, converted into embeddings that capture meaning, searched with a hybrid of keyword and vector retrieval when a question arrives, and finally answered using only the retrieved passages, with a citation for each one." },
     { title: "Document chunking", href: "#craft",
-      text: "When a system reads your documents, the first thing it does is cut them into pieces. Get that wrong and every answer afterwards is wrong too — a paragraph split in half, a clause that lost the heading giving it meaning, a table turned into noise." },
+      text: "When a system reads your documents, the first thing it does is cut them into pieces. Get that wrong and every answer afterwards is wrong too — a paragraph split in half, a clause that lost the heading giving it meaning, a table turned into noise. The live demo on this page cuts a PDF or a Word file into passages and then answers questions from them, with a citation for each answer, entirely in your browser." },
     { title: "Service — AI chatbots and assistants", href: "#build",
       text: "AI chatbots and assistants. A chatbot that answers from your own documents, cites where it got the answer, and admits it does not know rather than inventing something plausible." },
     { title: "Service — Document AI over your files", href: "#build",

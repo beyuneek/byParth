@@ -60,6 +60,12 @@ overlap starts at a word boundary, and fragments under 60 tokens are merged
 into their neighbour instead of being indexed as noise. Two sliders re-chunk
 everything as you drag them.
 
+Then ask it something. BM25 over those same chunks answers from the document
+in front of you: the matched words are highlighted, a table answers with its
+header row attached, and every answer cites the passage it came from — click
+the citation and that passage scrolls into view. Ask something the document
+does not cover and it says so instead of reaching for the nearest paragraph.
+
 Your file never leaves the browser. `FileReader` only — there is deliberately
 no `fetch()` anywhere in that file, and the network tab will show you that.
 
