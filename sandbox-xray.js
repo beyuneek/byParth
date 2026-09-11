@@ -642,12 +642,12 @@ END OF PROCEDURE — NORTHWIND FABRICATION WORKS (FICTIONAL).`;
         <div class="xs" data-stat="overlap"><span class="xs-val">–</span><span class="xs-key">overlap</span></div>
       </div>
 
-      <div class="xray-drop" id="xr-drop" tabindex="0" role="button" aria-label="Drop a .txt or .md file, or activate to browse">
-        <p class="xray-drop-title">Drop a <b>.txt</b> or <b>.md</b> file here</p>
+      <div class="xray-drop" id="xr-drop" tabindex="0" role="button" aria-label="Drop a PDF, Word, text or markdown file, or activate to browse">
+        <p class="xray-drop-title">Drop a <b>PDF</b>, <b>Word</b>, <b>.txt</b> or <b>.md</b> file here, or click to choose one</p>
         <p class="xray-drop-note" id="xr-drop-note">Using the fictional sample SOP. Drop your own to see it chunked.</p>
         <div class="xray-drop-actions">
           <button type="button" class="btn btn-ghost" id="xr-reset">Reset sample</button>
-          <input type="file" id="xr-file" accept=".txt,.md,.markdown,text/plain" hidden />
+          <input type="file" id="xr-file" accept=".pdf,.docx,.txt,.md,.markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" hidden />
         </div>
       </div>
 
