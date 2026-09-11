@@ -36,10 +36,10 @@ kind of problem where a confident wrong answer is worse than no answer. That
 is hard to prove in a paragraph, so the site proves it three times instead,
 and every one of those demonstrations runs in the visitor's own browser.
 
-There is no backend here. No API keys, no server, no analytics, no network
-call of any kind after the page loads. That is not only a hosting decision —
-it is the same argument I make to clients about where their documents should
-live, so the site had better make it honestly.
+There is no backend here. No API keys, no server, no analytics, and nothing a
+visitor types or drops into the page is ever sent anywhere. That is not only a
+hosting decision — it is the same argument I make to clients about where their
+documents should live, so the site had better make it honestly.
 
 ## The three demonstrations
 
@@ -52,8 +52,8 @@ when nothing matches, and greets you instead of refusing when you just type
 "hi" — that last case is the one most search boxes get wrong.
 
 **2 · See your document the way an AI does**
-Drop in a `.txt` or `.md` file and watch it get cut into passages live. It
-splits on structure first — markdown headings, numbered clauses like `4.2`,
+Drop in a PDF, a Word file, or a `.txt` / `.md` file and watch it get cut into
+passages live. It splits on structure first — markdown headings, numbered clauses like `4.2`,
 ALL-CAPS lines, `Annex`/`Appendix` — then by size within each section,
 recursively. Tables are detected and emitted whole rather than sliced in half,
 overlap starts at a word boundary, and fragments under 60 tokens are merged
@@ -81,6 +81,7 @@ main.js            CONTENT — every word on the page — plus the renderers
 sandbox-ask.js     BM25 retrieval over CONTENT
 sandbox-xray.js    structure-aware chunking, FileReader only
 404.html
+assets/vendor/pdfjs/   pdf.js 6.3.289 (Apache-2.0), loaded only when a PDF is dropped
 ```
 
 **Every word on the page lives in one `CONTENT` object.** The renderers read
@@ -122,6 +123,8 @@ about thirty seconds.
 Type is [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotesque),
 [Manrope](https://fonts.google.com/specimen/Manrope) and
 [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono).
+PDFs are read by Mozilla's [pdf.js](https://mozilla.github.io/pdf.js/), under
+the Apache License 2.0 — the copy and its licence are in `assets/vendor/pdfjs/`.
 Everything else is mine.
 
 ## Contact

@@ -3,6 +3,9 @@
 
    Structure-aware chunking, live, entirely in the browser.
    FileReader only — there is deliberately NO fetch() anywhere in this file.
+   A .docx is unzipped with the browser's own DecompressionStream. A PDF is
+   read by pdf.js, served from this same site and loaded only the first time
+   somebody drops one. Either way, the file itself goes nowhere.
    ========================================================================= */
 (function () {
   "use strict";
@@ -281,22 +284,336 @@ END OF PROCEDURE — NORTHWIND FABRICATION WORKS (FICTIONAL).`;
     render(chunks, sections);
   }
 
-  /* -------- file handling (FileReader only) -------- */
-  function readFile(file) {
+  /* -------- file handling (FileReader only — nothing is uploaded) -------- */
+  const MAX_BYTES = 25 * 1024 * 1024;
+  const MAX_PDF_PAGES = 60;
+  let loadSeq = 0;
+
+  function readAs(file, kind) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      if (kind === "buffer") reader.readAsArrayBuffer(file);
+      else reader.readAsText(file);
+    });
+  }
+
+  function kindOf(file) {
+    const name = file.name || "", type = file.type || "";
+    if (/\.pdf$/i.test(name) || type === "application/pdf") return "pdf";
+    if (/\.docx$/i.test(name) || /wordprocessingml\.document/.test(type)) return "docx";
+    if (/\.doc$/i.test(name) || type === "application/msword") return "doc";
+    if (/\.(txt|md|markdown)$/i.test(name) || /^text\//.test(type)) return "text";
+    return null;
+  }
+
+  async function readFile(file) {
     if (!file) return;
-    const okName = /\.(txt|md|markdown)$/i.test(file.name);
-    const okType = !file.type || /text\//.test(file.type);
-    if (!okName && !okType) {
-      els.dropNote.textContent = "Please drop a .txt or .md file.";
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      currentText = String(e.target.result || "");
-      els.dropNote.textContent = `Loaded: ${file.name}`;
+    const note = (msg) => { els.dropNote.textContent = msg; };
+    const kind = kindOf(file);
+    if (!kind) return note("That file type isn't supported. Drop a PDF, a Word .docx, or a .txt / .md file.");
+    if (kind === "doc") return note("That's the old Word .doc format. Save it as .docx or PDF and drop it again.");
+    if (file.size > MAX_BYTES) return note("That file is over 25 MB. Try a smaller one.");
+
+    const job = ++loadSeq;
+    note(`Reading ${file.name}…`);
+    try {
+      let text, detail = "";
+      if (kind === "text") {
+        text = String(await readAs(file, "text"));
+      } else if (kind === "docx") {
+        text = await docxToText(await readAs(file, "buffer"));
+      } else {
+        const out = await pdfToText(await readAs(file, "buffer"));
+        text = out.text;
+        detail = out.pages > out.read
+          ? ` · first ${out.read} of ${out.pages} pages`
+          : ` · ${out.pages} page${out.pages === 1 ? "" : "s"}`;
+      }
+      if (job !== loadSeq) return;                 // a newer file was dropped meanwhile
+      if (text.replace(/\s/g, "").length < 20) {
+        return note(kind === "pdf"
+          ? `${file.name} has no text layer — it is probably a scan. A chatbot would need OCR before it could read a word of it, and that is where most pipelines quietly lose scanned documents.`
+          : `No readable text found in ${file.name}.`);
+      }
+      currentText = text;
+      note(`Loaded: ${file.name}${detail}`);
       rechunk();
+    } catch (err) {
+      if (job !== loadSeq) return;
+      console.warn("[x-ray]", err);
+      note(describeError(err, kind, file.name));
+    }
+  }
+
+  function describeError(err, kind, name) {
+    if (err && err.name === "PasswordException") return `${name} is password-protected. Remove the password and try again.`;
+    if (err && err.code === "NO_DECOMPRESSOR") return "This browser can't unzip Word files. Try a recent Chrome, Edge, Firefox or Safari, or save the file as PDF.";
+    if (err && err.code === "PDF_READER") return "The PDF reader didn't load. Check your connection and try again.";
+    if (kind === "docx") return `${name} couldn't be read as a Word document.`;
+    if (kind === "pdf") return `${name} couldn't be read as a PDF.`;
+    return `${name} couldn't be read.`;
+  }
+
+  /* -------- Word (.docx) — a zip of XML, unzipped right here -------- */
+  async function inflateRaw(bytes) {
+    if (typeof DecompressionStream === "undefined") {
+      const e = new Error("DecompressionStream unavailable");
+      e.code = "NO_DECOMPRESSOR";
+      throw e;
+    }
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  // Reads the zip's central directory and inflates only the entries asked for.
+  async function unzip(buffer, wanted) {
+    const dv = new DataView(buffer), utf8 = new TextDecoder(), out = new Map();
+    let eocd = -1;
+    for (let i = buffer.byteLength - 22; i >= Math.max(0, buffer.byteLength - 65557); i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error("not a zip file");
+    const count = dv.getUint16(eocd + 10, true);
+    let p = dv.getUint32(eocd + 16, true);
+    for (let k = 0; k < count && dv.getUint32(p, true) === 0x02014b50; k++) {
+      const method = dv.getUint16(p + 10, true);
+      const size = dv.getUint32(p + 20, true);
+      const nameLen = dv.getUint16(p + 28, true);
+      const extraLen = dv.getUint16(p + 30, true);
+      const commentLen = dv.getUint16(p + 32, true);
+      const local = dv.getUint32(p + 42, true);
+      const name = utf8.decode(new Uint8Array(buffer, p + 46, nameLen));
+      if (wanted.includes(name)) {
+        const start = local + 30 + dv.getUint16(local + 26, true) + dv.getUint16(local + 28, true);
+        const raw = new Uint8Array(buffer, start, size);
+        out.set(name, utf8.decode(method === 0 ? raw : await inflateRaw(raw)));
+      }
+      p += 46 + nameLen + extraLen + commentLen;
+    }
+    return out;
+  }
+
+  const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+  const wAttr = (el, name) => (el ? el.getAttributeNS(W_NS, name) || el.getAttribute("w:" + name) : null);
+  const wChild = (el, name) => (el ? Array.from(el.children).find((c) => c.localName === name) : undefined);
+
+  async function docxToText(buffer) {
+    const files = await unzip(buffer, ["word/document.xml", "word/styles.xml"]);
+    const parse = (xml) => {
+      const doc = new DOMParser().parseFromString(xml, "application/xml");
+      if (doc.getElementsByTagName("parsererror").length) throw new Error("malformed XML");
+      return doc;
     };
-    reader.readAsText(file);
+    if (!files.has("word/document.xml")) throw new Error("no word/document.xml");
+
+    // styleId → style name, so a heading is still found when Word has
+    // localised the id ("Überschrift1") but kept the name ("heading 1").
+    const styleNames = new Map();
+    if (files.has("word/styles.xml")) {
+      for (const s of parse(files.get("word/styles.xml")).getElementsByTagNameNS(W_NS, "style")) {
+        styleNames.set(wAttr(s, "styleId"), (wAttr(wChild(s, "name"), "val") || "").toLowerCase());
+      }
+    }
+
+    const body = parse(files.get("word/document.xml")).getElementsByTagNameNS(W_NS, "body")[0];
+    const blocks = [];
+    if (body) walkBlocks(body, blocks, styleNames);
+    return blocks.join("\n\n");
+  }
+
+  // Deleted tracked changes, field codes and the fallback copy of a text box
+  // are in the XML but not on the page, so they are not read.
+  const SKIP = new Set(["pPr", "rPr", "del", "delText", "instrText", "moveFrom", "Fallback"]);
+  function inlineText(node) {
+    let s = "";
+    for (const c of node.children) {
+      const n = c.localName;
+      if (n === "t") s += c.textContent;
+      else if (n === "tab" || n === "br" || n === "cr") s += " ";
+      else if (n === "noBreakHyphen") s += "-";
+      else if (!SKIP.has(n)) s += inlineText(c);
+    }
+    return s;
+  }
+
+  function headingLevel(p, styleNames) {
+    const pPr = wChild(p, "pPr");
+    if (!pPr) return 0;
+    const id = wAttr(wChild(pPr, "pStyle"), "val") || "";
+    const name = styleNames.get(id) || id.toLowerCase();
+    const m = /^heading\s*(\d)/.exec(name);
+    if (m) return +m[1];
+    if (name === "title") return 1;
+    const outline = wAttr(wChild(pPr, "outlineLvl"), "val");
+    if (outline && +outline < 9) return +outline + 1;
+    return 0;
+  }
+
+  function walkBlocks(node, out, styleNames) {
+    for (const c of node.children) {
+      const n = c.localName;
+      if (n === "p") {
+        const text = inlineText(c).replace(/\s+/g, " ").trim();
+        if (!text) continue;
+        const level = headingLevel(c, styleNames);
+        const listItem = !level && wChild(wChild(c, "pPr"), "numPr");
+        if (level) out.push("#".repeat(Math.min(level, 6)) + " " + text);
+        else if (listItem && out.lastWasList) out[out.length - 1] += "\n- " + text;   // keep a list together
+        else out.push(listItem ? "- " + text : text);
+        out.lastWasList = Boolean(listItem);
+      } else if (n === "tbl") {
+        const table = tableText(c, styleNames);
+        if (table) out.push(table);
+        out.lastWasList = false;
+      } else if (n === "sdt" || n === "sdtContent" || n === "customXml" || n === "ins" || n === "moveTo" || n === "smartTag") {
+        walkBlocks(c, out, styleNames);
+      }
+    }
+  }
+
+  // Rows become a markdown table so the chunker keeps it whole. A one-column
+  // table is almost always a layout box, so it is read as plain paragraphs.
+  function tableText(tbl, styleNames) {
+    const rows = [];
+    for (const tr of tbl.children) {
+      if (tr.localName !== "tr") continue;
+      const cells = [];
+      for (const tc of tr.children) {
+        if (tc.localName !== "tc") continue;
+        const parts = [];
+        walkBlocks(tc, parts, styleNames);
+        cells.push(parts.map((t) => t.replace(/^(#+|-) /gm, "")).join(" ").replace(/\|/g, "/").replace(/\s+/g, " ").trim());
+      }
+      if (cells.some(Boolean)) rows.push(cells);
+    }
+    if (!rows.length) return "";
+    const width = Math.max(...rows.map((r) => r.length));
+    if (width === 1) return rows.map((r) => r[0]).join("\n\n");
+    return markdownTable(rows, width);
+  }
+
+  function markdownTable(rows, width) {
+    const line = (cells) => "| " + cells.concat(Array(width - cells.length).fill("")).join(" | ") + " |";
+    return [line(rows[0]), line(Array(width).fill("---")), ...rows.slice(1).map(line)].join("\n");
+  }
+
+  /* -------- PDF — read by pdf.js, fetched from this site on first use -------- */
+  let pdfjsLoading = null;
+  function loadPdfjs() {
+    if (!pdfjsLoading) {
+      const base = new URL("assets/vendor/pdfjs/", document.baseURI);
+      pdfjsLoading = import(new URL("pdf.min.js", base).href).then((lib) => {
+        lib.GlobalWorkerOptions.workerSrc = new URL("pdf.worker.min.js", base).href;
+        return lib;
+      }).catch(() => {
+        pdfjsLoading = null;                          // let the next drop try again
+        const e = new Error("PDF reader failed to load");
+        e.code = "PDF_READER";
+        throw e;
+      });
+    }
+    return pdfjsLoading;
+  }
+
+  async function pdfToText(buffer) {
+    const lib = await loadPdfjs();
+    const task = lib.getDocument({ data: new Uint8Array(buffer), isEvalSupported: false });
+    try {
+      const pdf = await task.promise;
+      const pages = pdf.numPages, read = Math.min(pages, MAX_PDF_PAGES);
+      const lines = [];
+      for (let i = 1; i <= read; i++) {
+        const page = await pdf.getPage(i);
+        pdfLines((await page.getTextContent()).items, i, lines);
+        page.cleanup();
+      }
+      return { text: linesToText(lines), pages, read };
+    } finally {
+      task.destroy();                                 // frees the worker, even on a bad or locked file
+    }
+  }
+
+  // A PDF is positioned text, not paragraphs. Group runs into lines by their
+  // baseline; a wide gap inside a line starts a new cell.
+  function pdfLines(items, page, out) {
+    let cur = null;
+    const flush = () => { if (cur) out.push(cur); cur = null; };
+    for (const it of items) {
+      if (typeof it.str !== "string" || !it.str.trim()) continue;
+      const x = it.transform[4], y = it.transform[5];
+      const h = Math.abs(it.height || it.transform[3]) || 1;
+      if (!cur || Math.abs(y - cur.y) > 0.5 * Math.max(h, cur.h)) {
+        flush();
+        cur = { page, y, h, cells: [it.str], end: x + it.width };
+        continue;
+      }
+      const gap = x - cur.end;
+      if (gap > 1.5 * Math.max(h, cur.h)) {
+        cur.cells.push(it.str);
+      } else {
+        const last = cur.cells.length - 1;
+        const space = gap > 0.12 * h && !/\s$/.test(cur.cells[last]) && !/^\s/.test(it.str);
+        cur.cells[last] += (space ? " " : "") + it.str;
+      }
+      cur.end = Math.max(cur.end, x + it.width);
+      cur.h = Math.max(cur.h, h);
+    }
+    flush();
+  }
+
+  const PAGE_NUMBER = /^(page\s+)?[-–—]?\s*\d{1,4}\s*[-–—]?(\s*(of|\/)\s*\d{1,4})?$/i;
+
+  // Lines → markdown-ish text the chunker already understands: larger type
+  // becomes a heading, a bigger vertical gap starts a paragraph, rows that
+  // line up into columns become a table, and page numbers are dropped.
+  function linesToText(lines) {
+    if (!lines.length) return "";
+    const median = (a) => a.sort((x, y) => x - y)[Math.floor(a.length / 2)];
+    const body = median(lines.map((l) => l.h));
+    const gaps = [];
+    for (let i = 1; i < lines.length; i++) {
+      const g = lines[i - 1].y - lines[i].y;
+      if (lines[i].page === lines[i - 1].page && g > 0) gaps.push(g);
+    }
+    const lineGap = gaps.length ? median(gaps) : body * 1.3;
+
+    const blocks = [];
+    let para = [], table = [];
+    const endPara = () => {
+      if (para.length) blocks.push(para.reduce((acc, l) =>
+        /[A-Za-z]-$/.test(acc) && /^[a-z]/.test(l) ? acc.slice(0, -1) + l : acc + " " + l));
+      para = [];
+    };
+    const endTable = () => {
+      if (table.length > 1) blocks.push(markdownTable(table, Math.max(...table.map((r) => r.length))));
+      else if (table.length === 1) blocks.push(table[0].join(" "));
+      table = [];
+    };
+
+    lines.forEach((ln, i) => {
+      const prev = lines[i - 1], next = lines[i + 1];
+      const cells = ln.cells.map((c) => c.replace(/\s+/g, " ").trim().replace(/\|/g, "/")).filter(Boolean);
+      const text = cells.join(" ");
+      const edgeOfPage = !prev || prev.page !== ln.page || !next || next.page !== ln.page;
+      if (edgeOfPage && PAGE_NUMBER.test(text)) return;
+
+      if (cells.length > 1) { endPara(); table.push(cells); return; }
+      endTable();
+
+      const level = text.length <= 100 ? (ln.h >= body * 1.6 ? 1 : ln.h >= body * 1.2 ? 2 : 0) : 0;
+      if (level) { endPara(); blocks.push("#".repeat(level) + " " + text); return; }
+
+      // A paragraph carries over a page break unless the last line finished a sentence.
+      const newPara = !prev ||
+        (prev.page !== ln.page ? /[.!?:)"”]$/.test(para[para.length - 1] || ".") : prev.y - ln.y > lineGap * 1.45);
+      if (newPara) endPara();
+      para.push(text);
+    });
+    endTable();
+    endPara();
+    return blocks.join("\n\n");
   }
 
   /* -------- build UI -------- */
@@ -304,7 +621,7 @@ END OF PROCEDURE — NORTHWIND FABRICATION WORKS (FICTIONAL).`;
     root.innerHTML = `
       <div class="xray-badge">
         <span class="xray-lock">●</span>
-        Your file never leaves your browser. Open your network tab and check.
+        Your file never leaves your browser. Open your network tab and check: nothing is uploaded.
       </div>
 
       <div class="xray-controls">
